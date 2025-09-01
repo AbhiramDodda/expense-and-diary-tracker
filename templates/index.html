@@ -1,64 +1,72 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Expense & Diary Tracker</title>
-  <!-- Tailwind (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Vue 3 (CDN) -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-50">
   <div id="app" class="max-w-6xl mx-auto p-4 space-y-6">
   {% raw %}
     <header class="flex items-center justify-between">
       <h1 class="text-3xl font-bold"> Expense & Diary Tracker</h1>
-      <div class="text-sm opacity-70">Flask + Vue (CDN) • Encrypted diary</div>
+      <div class="flex items-center gap-2">
+        <div class="text-sm opacity-70">Flask + Vue (CDN) • Encrypted diary</div>
+        <button @click="toggleDarkMode" class="p-2 rounded-full bg-slate-200 dark:bg-slate-700">
+          <svg v-if="isDarkMode" class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 9a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z"></path></svg>
+          <svg v-else class="w-5 h-5 text-slate-700" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+        </button>
+      </div>
     </header>
 
     <section class="grid md:grid-cols-2 gap-6">
-      <div class="bg-white rounded-2xl shadow p-4">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
         <h2 class="text-xl font-semibold mb-2">Add Expense</h2>
         <form @submit.prevent="submitExpense" class="grid grid-cols-2 gap-3">
           <div class="col-span-1">
             <label class="text-sm">Date</label>
-            <input v-model="expenseForm.date" type="date" class="w-full border rounded p-2" required>
+            <input v-model="expenseForm.date" type="date" class="w-full border rounded p-2 bg-white dark:bg-slate-700 dark:border-slate-600" required>
           </div>
           <div class="col-span-1">
             <label class="text-sm">Category</label>
-            <input v-model="expenseForm.category" placeholder="e.g., Food" class="w-full border rounded p-2" required>
+            <input v-model="expenseForm.category" placeholder="e.g., Food" class="w-full border rounded p-2 bg-white dark:bg-slate-700 dark:border-slate-600" required>
           </div>
           <div class="col-span-1">
             <label class="text-sm">Amount</label>
-            <input v-model.number="expenseForm.amount" type="number" step="0.01" class="w-full border rounded p-2" required>
+            <input v-model.number="expenseForm.amount" type="number" step="0.01" class="w-full border rounded p-2 bg-white dark:bg-slate-700 dark:border-slate-600" required>
           </div>
           <div class="col-span-1">
             <label class="text-sm">Note (optional)</label>
-            <input v-model="expenseForm.note" class="w-full border rounded p-2">
+            <input v-model="expenseForm.note" class="w-full border rounded p-2 bg-white dark:bg-slate-700 dark:border-slate-600">
           </div>
           <div class="col-span-2 flex justify-end">
-            <button class="px-4 py-2 rounded-xl bg-slate-900 text-white hover:opacity-90">Save Expense</button>
+            <button class="px-4 py-2 rounded-xl bg-slate-900 text-white hover:opacity-90 dark:bg-slate-50 dark:text-slate-900">Save Expense</button>
           </div>
         </form>
       </div>
 
-      <div class="bg-white rounded-2xl shadow p-4">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
         <h2 class="text-xl font-semibold mb-2">Add Diary Entry (encrypted at rest)</h2>
         <form @submit.prevent="submitDiary" class="space-y-2">
           <div>
             <label class="text-sm">Date</label>
-            <input v-model="diaryForm.date" type="date" class="w-full border rounded p-2" required>
+            <input v-model="diaryForm.date" type="date" class="w-full border rounded p-2 bg-white dark:bg-slate-700 dark:border-slate-600" required>
           </div>
           <div>
             <label class="text-sm">Content</label>
-            <textarea v-model="diaryForm.content" rows="4" class="w-full border rounded p-2" placeholder="Today I..."></textarea>
+            <textarea v-model="diaryForm.content" rows="4" class="w-full border rounded p-2 bg-white dark:bg-slate-700 dark:border-slate-600" placeholder="Today I..."></textarea>
           </div>
           <div class="flex justify-end">
             <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:opacity-90">Save Entry</button>
@@ -68,50 +76,129 @@
     </section>
 
     <section class="grid md:grid-cols-2 gap-6">
-      <div class="bg-white rounded-2xl shadow p-4">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
         <div class="flex items-center justify-between mb-2">
           <h2 class="text-xl font-semibold">Monthly Categories (Pie)</h2>
           <div class="flex gap-2 items-center">
-            <input v-model.number="filters.month" type="number" min="1" max="12" class="w-20 border rounded p-1">
-            <input v-model.number="filters.year" type="number" min="2000" max="2100" class="w-24 border rounded p-1">
-            <button @click="loadCharts" class="px-3 py-1 rounded bg-slate-900 text-white">Go</button>
+            <input v-model.number="filters.month" type="number" min="1" max="12" class="w-20 border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
+            <input v-model.number="filters.year" type="number" min="2000" max="2100" class="w-24 border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
+            <button @click="loadCharts" class="px-3 py-1 rounded bg-slate-900 text-white dark:bg-slate-50 dark:text-slate-900">Go</button>
           </div>
         </div>
         <canvas id="pieChart"></canvas>
       </div>
-      <div class="bg-white rounded-2xl shadow p-4">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
         <div class="flex items-center justify-between mb-2">
           <h2 class="text-xl font-semibold">Yearly Total (Line)</h2>
           <div class="flex gap-2 items-center">
-            <input v-model.number="filters.year" type="number" min="2000" max="2100" class="w-24 border rounded p-1">
-            <button @click="loadCharts" class="px-3 py-1 rounded bg-slate-900 text-white">Go</button>
+            <input v-model.number="filters.year" type="number" min="2000" max="2100" class="w-24 border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
+            <button @click="loadCharts" class="px-3 py-1 rounded bg-slate-900 text-white dark:bg-slate-50 dark:text-slate-900">Go</button>
           </div>
         </div>
         <canvas id="lineChart"></canvas>
       </div>
     </section>
 
-    <section class="bg-white rounded-2xl shadow p-4">
+    <section class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-xl font-semibold">Calendar • expenses total + diary</h2>
         <div class="flex gap-2 items-center">
-          <input v-model.number="filters.month" type="number" min="1" max="12" class="w-20 border rounded p-1">
-          <input v-model.number="filters.year" type="number" min="2000" max="2100" class="w-24 border rounded p-1">
-          <button @click="loadCalendar" class="px-3 py-1 rounded bg-slate-900 text-white">Go</button>
+          <input v-model.number="filters.month" type="number" min="1" max="12" class="w-20 border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
+          <input v-model.number="filters.year" type="number" min="2000" max="2100" class="w-24 border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
+          <button @click="loadCalendar" class="px-3 py-1 rounded bg-slate-900 text-white dark:bg-slate-50 dark:text-slate-900">Go</button>
         </div>
       </div>
       <div id="calendar"></div>
     </section>
 
-    <section class="bg-white rounded-2xl shadow p-4">
+    <section class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
       <h2 class="text-xl font-semibold mb-2">Recent Diary Entries</h2>
       <div class="grid md:grid-cols-2 gap-3">
-        <div v-for="d in diary" :key="d.id" class="border rounded-xl p-3">
+        <div v-for="d in diary" :key="d.id" class="border rounded-xl p-3 dark:border-slate-700">
           <div class="text-xs opacity-70">{{ d.date }}</div>
           <div class="whitespace-pre-wrap mt-1">{{ d.content }}</div>
         </div>
       </div>
     </section>
+
+    <section class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
+      <h2 class="text-xl font-semibold mb-2">Expense List</h2>
+      <div class="flex gap-2 items-center mb-4">
+          <label class="text-sm">Filter by Month:</label>
+          <input type="month" v-model="selectedMonth" @change="fetchExpenses" class="border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
+      </div>
+      <table class="w-full text-left table-auto">
+        <thead>
+          <tr class="bg-slate-100 dark:bg-slate-700">
+            <th class="p-2">Date</th>
+            <th class="p-2">Category</th>
+            <th class="p-2">Amount</th>
+            <th class="p-2">Note</th>
+            <th class="p-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="expense in expenses" :key="expense.id" class="border-b dark:border-slate-700">
+            <td class="p-2">{{ expense.date }}</td>
+            <td class="p-2">
+              <input v-if="editingId === expense.id" v-model="editData.category" class="w-full border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
+              <span v-else>{{ expense.category }}</span>
+            </td>
+            <td class="p-2">
+              <input v-if="editingId === expense.id" type="number" v-model="editData.amount" step="0.01" class="w-full border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
+              <span v-else>{{ expense.amount }}</span>
+            </td>
+            <td class="p-2">
+              <input v-if="editingId === expense.id" v-model="editData.note" class="w-full border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
+              <span v-else>{{ expense.note }}</span>
+            </td>
+            <td class="p-2 space-x-2">
+              <button v-if="editingId !== expense.id" @click="startEdit(expense)" class="text-blue-500 hover:text-blue-700">Edit</button>
+              <button v-if="editingId === expense.id" @click="saveEdit(expense.id)" class="text-green-500 hover:text-green-700">Save</button>
+              <button @click="deleteExpense(expense.id)" class="text-red-500 hover:text-red-700">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+    
+    <div v-if="showModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-xl w-11/12 md:max-w-3xl">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold">{{ modalDate }}</h3>
+          <button @click="showModal = false" class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 text-2xl">&times;</button>
+        </div>
+        
+        <div class="md:grid md:grid-cols-2 gap-6">
+          <div>
+            <h4 class="font-semibold mb-2 text-lg">Expenses:</h4>
+            <div v-if="modalExpenses.length > 0">
+              <ul class="space-y-2">
+                <li v-for="exp in modalExpenses" :key="exp.id" class="border-b dark:border-slate-700 pb-2">
+                  <span class="font-medium">{{ exp.category }}:</span> ${{ exp.amount }}
+                  <p v-if="exp.note" class="text-sm opacity-70">{{ exp.note }}</p>
+                </li>
+              </ul>
+            </div>
+            <div v-else class="text-gray-500 italic dark:text-gray-400">
+              No expenses recorded.
+            </div>
+          </div>
+          
+          <div>
+            <h4 class="font-semibold mb-2 text-lg">Diary Entries:</h4>
+            <div v-if="modalDiary.length > 0">
+              <div v-for="entry in modalDiary" :key="entry.id" class="border-l-4 border-indigo-500 pl-3 mb-2">
+                <p class="whitespace-pre-wrap text-sm">{{ entry.content }}</p>
+              </div>
+            </div>
+            <div v-else class="text-gray-500 italic dark:text-gray-400">
+              No diary entries for this date.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   {% endraw %}
   </div>
 
@@ -124,6 +211,18 @@ const { createApp, onMounted, ref } = Vue
       const expenseForm = ref({ date: new Date().toISOString().slice(0,10), category: '', amount: '', note: '' })
       const diaryForm = ref({ date: new Date().toISOString().slice(0,10), content: '' })
       const diary = ref([])
+      const expenses = ref([])
+      const selectedMonth = ref(new Date().toISOString().slice(0, 7))
+      const editingId = ref(null)
+      const editData = ref({})
+      const isDarkMode = ref(document.documentElement.classList.contains('dark'))
+
+      // Calendar Modal State
+      const showModal = ref(false)
+      const modalDate = ref('')
+      const modalExpenses = ref([])
+      const modalDiary = ref([])
+
       const filters = ref({
         year: new Date().getFullYear(),
         month: new Date().getMonth() + 1
@@ -140,6 +239,7 @@ const { createApp, onMounted, ref } = Vue
         expenseForm.value.note = ''
         await loadCharts()
         await loadCalendar()
+        await fetchExpenses()
       }
   
       const submitDiary = async () => {
@@ -147,6 +247,35 @@ const { createApp, onMounted, ref } = Vue
         diaryForm.value.content = ''
         await loadDiary()
         await loadCalendar()
+      }
+
+      const fetchExpenses = async () => {
+        const [year, month] = selectedMonth.value.split('-')
+        const res = await axios.get('/api/expenses', { params: { year, month } })
+        expenses.value = res.data
+      }
+
+      const startEdit = (expense) => {
+        editingId.value = expense.id
+        editData.value = { ...expense }
+      }
+
+      const saveEdit = async (id) => {
+        await axios.put(`/api/expenses/${id}`, editData.value)
+        editingId.value = null
+        editData.value = {}
+        await fetchExpenses()
+        await loadCharts()
+        await loadCalendar()
+      }
+
+      const deleteExpense = async (id) => {
+        if (confirm('Are you sure you want to delete this expense?')) {
+          await axios.delete(`/api/expenses/${id}`)
+          await fetchExpenses()
+          await loadCharts()
+          await loadCalendar()
+        }
       }
   
       const loadDiary = async () => {
@@ -163,10 +292,10 @@ const { createApp, onMounted, ref } = Vue
         if (pieChart) pieChart.destroy()
         pieChart = new Chart(pieCtx, {
           type: 'pie',
-          data: { labels, datasets: [{ data: values }] },
-          options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+          data: { labels, datasets: [{ data: values, backgroundColor: ['#4F46E5', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#6366F1', '#EC4899', '#84CC16', '#F97316', '#14B8A6'] }] },
+          options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: isDarkMode.value ? '#E2E8F0' : '#1E293B' } } } }
         })
-  
+        
         
         const lineRes = await axios.get('/api/expenses/summary/yearly', { params: { year: filters.value.year } })
         const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -174,8 +303,8 @@ const { createApp, onMounted, ref } = Vue
         if (lineChart) lineChart.destroy()
         lineChart = new Chart(lineCtx, {
           type: 'line',
-          data: { labels: months, datasets: [{ label: `Total ${filters.value.year}`, data: lineRes.data.series, tension: 0.2 }] },
-          options: { responsive: true, plugins: { legend: { display: true } } }
+          data: { labels: months, datasets: [{ label: `Total ${filters.value.year}`, data: lineRes.data.series, tension: 0.2, borderColor: '#4F46E5', backgroundColor: '#4F46E5' }] },
+          options: { responsive: true, plugins: { legend: { display: true, labels: { color: isDarkMode.value ? '#E2E8F0' : '#1E293B' } } }, scales: { y: { ticks: { color: isDarkMode.value ? '#E2E8F0' : '#1E293B' }, grid: { color: isDarkMode.value ? 'rgba(241, 245, 249, 0.1)' : 'rgba(30, 41, 59, 0.1)' } }, x: { ticks: { color: isDarkMode.value ? '#E2E8F0' : '#1E293B' }, grid: { color: isDarkMode.value ? 'rgba(241, 245, 249, 0.1)' : 'rgba(30, 41, 59, 0.1)' } } } }
         })
       }
   
@@ -196,25 +325,42 @@ const { createApp, onMounted, ref } = Vue
           events,
           eventClick: async (info) => {
             const dateStr = info.event.startStr.slice(0,10)
-            const entries = await axios.get('/api/diary', { params: { date: dateStr } })
-            const total = await axios.get('/api/expenses', { params: { year: parseInt(dateStr.slice(0,4)), month: parseInt(dateStr.slice(5,7)) } })
-            const dayTotal = total.data.filter(e => e.date === dateStr).reduce((s, e) => s + e.amount, 0)
-            alert(`${dateStr}\nTotal: $${dayTotal.toFixed(2)}\nDiary:\n\n${entries.data.map(e => '- ' + e.content).join('\n') || '(none)'}`)
+            const expensesRes = await axios.get('/api/expenses', { params: { date: dateStr } })
+            const diaryRes = await axios.get('/api/diary', { params: { date: dateStr } })
+
+            modalDate.value = dateStr
+            modalExpenses.value = expensesRes.data
+            modalDiary.value = diaryRes.data
+            showModal.value = true
           }
         })
         calendar.render()
       }
-  
+
+      const toggleDarkMode = () => {
+        isDarkMode.value = !isDarkMode.value
+        document.documentElement.classList.toggle('dark', isDarkMode.value)
+        localStorage.setItem('darkMode', isDarkMode.value)
+        loadCharts()
+      }
+
+      // Check for dark mode preference on load
       onMounted(async () => {
+        if (localStorage.getItem('darkMode') === 'true') {
+          isDarkMode.value = true
+          document.documentElement.classList.add('dark')
+        }
         try { await axios.get('/api/_init_db') } catch(e) {}
         await loadCharts()
         await loadCalendar()
         await loadDiary()
+        await fetchExpenses()
       })
   
-      return { expenseForm, diaryForm, diary, filters, submitExpense, submitDiary, loadCharts, loadCalendar }
+      return { expenseForm, diaryForm, diary, filters, submitExpense, submitDiary, loadCharts, loadCalendar, expenses, selectedMonth, fetchExpenses, editingId, editData, startEdit, saveEdit, deleteExpense, showModal, modalDate, modalExpenses, modalDiary, isDarkMode, toggleDarkMode }
     }
   }).mount('#app')
+  
 {% endraw %}
 </script>
 </body>

@@ -68,13 +68,19 @@ def add_expense():
 
 @app.get("/api/expenses")
 def list_expenses():
+    date_str = request.args.get("date")
     year = request.args.get("year", type=int)
     month = request.args.get("month", type=int)
+
     q = Expense.query
+    if date_str:
+        dt = datetime.strptime(date_str, "%Y-%m-%d").date()
+        q = q.filter(Expense.date == dt)
     if year:
         q = q.filter(func.strftime("%Y", Expense.date) == f"{year:04d}")
     if month:
         q = q.filter(func.strftime("%m", Expense.date) == f"{month:02d}")
+    
     items = q.order_by(Expense.date.desc(), Expense.id.desc()).all()
     return jsonify([{
         "id": e.id,
@@ -83,6 +89,23 @@ def list_expenses():
         "amount": e.amount,
         "note": e.note or ""
     } for e in items])
+
+@app.put("/api/expenses/<int:expense_id>")
+def update_expense(expense_id):
+    data = request.get_json(force=True)
+    exp = Expense.query.get_or_404(expense_id)
+    exp.category = data.get("category", exp.category)
+    exp.amount = float(data.get("amount", exp.amount))
+    exp.note = data.get("note", exp.note)
+    db.session.commit()
+    return jsonify({"status": "ok", "id": exp.id}), 200
+
+@app.delete("/api/expenses/<int:expense_id>")
+def delete_expense(expense_id):
+    exp = Expense.query.get_or_404(expense_id)
+    db.session.delete(exp)
+    db.session.commit()
+    return jsonify({"status": "ok", "id": exp.id}), 200
 
 @app.get("/api/expenses/summary/monthly")
 def monthly_category_pie():
