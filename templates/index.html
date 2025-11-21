@@ -31,7 +31,7 @@
       </div>
     </header>
 
-    <section class="grid md:grid-cols-2 gap-6">
+    <section class="grid md:grid-cols-3 gap-6">
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
         <h2 class="text-xl font-semibold mb-2">Add Expense</h2>
         <form @submit.prevent="submitExpense" class="grid grid-cols-2 gap-3">
@@ -73,10 +73,33 @@
           </div>
         </form>
       </div>
-    </section>
-
-    <section class="grid md:grid-cols-2 gap-6">
+      
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
+        <h2 class="text-xl font-semibold mb-2">Add Earning (Biweekly)</h2>
+        <form @submit.prevent="submitEarning" class="grid grid-cols-2 gap-3">
+          <div class="col-span-1">
+            <label class="text-sm">Date</label>
+            <input v-model="earningForm.date" type="date" class="w-full border rounded p-2 bg-white dark:bg-slate-700 dark:border-slate-600" required>
+          </div>
+          <div class="col-span-1">
+            <label class="text-sm">Source (optional)</label>
+            <input v-model="earningForm.source" placeholder="e.g., Salary" class="w-full border rounded p-2 bg-white dark:bg-slate-700 dark:border-slate-600">
+          </div>
+          <div class="col-span-2">
+            <label class="text-sm">Amount</label>
+            <input v-model.number="earningForm.amount" type="number" step="0.01" class="w-full border rounded p-2 bg-white dark:bg-slate-700 dark:border-slate-600" required>
+          </div>
+          <div class="col-span-2 flex justify-end">
+            <button class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:opacity-90">Save Earning</button>
+          </div>
+        </form>
+      </div>
+    </section>
+    
+    <hr class="border-slate-200 dark:border-slate-700" />
+
+    <section class="grid md:grid-cols-3 gap-6">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4 md:col-span-1">
         <div class="flex items-center justify-between mb-2">
           <h2 class="text-xl font-semibold">Monthly Categories (Pie)</h2>
           <div class="flex gap-2 items-center">
@@ -87,21 +110,117 @@
         </div>
         <canvas id="pieChart"></canvas>
       </div>
-      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
+      
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4 md:col-span-2">
         <div class="flex items-center justify-between mb-2">
-          <h2 class="text-xl font-semibold">Yearly Total (Line)</h2>
-          <div class="flex gap-2 items-center">
+          <h2 class="text-xl font-semibold">Yearly Financial Summary</h2>
+          <div class="flex gap-4 items-center">
+            <div 
+                 :class="{'text-green-500': profitSummary.profit >= 0, 'text-red-500': profitSummary.profit < 0}" 
+                 class="font-bold text-lg">
+              YTD P/L: ${{ profitSummary.profit.toFixed(2) }}
+            </div>
             <input v-model.number="filters.year" type="number" min="2000" max="2100" class="w-24 border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
             <button @click="loadCharts" class="px-3 py-1 rounded bg-slate-900 text-white dark:bg-slate-50 dark:text-slate-900">Go</button>
           </div>
         </div>
-        <canvas id="lineChart"></canvas>
+        <canvas id="financialLineChart"></canvas>
       </div>
     </section>
 
+    <hr class="border-slate-200 dark:border-slate-700" />
+    
     <section class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
+      <h2 class="text-xl font-semibold mb-2">EMI Planner</h2>
+      
+      <h3 class="text-lg font-semibold mb-2 text-purple-600 dark:text-purple-400">Add New Plan</h3>
+      <form @submit.prevent="submitEMIPlan" class="grid md:grid-cols-5 gap-3 mb-8 items-end p-4 border rounded-xl dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+        <div>
+          <label class="text-sm">Total Amount</label>
+          <input v-model.number="emiForm.amount" type="number" step="0.01" class="w-full border rounded p-2 bg-white dark:bg-slate-700 dark:border-slate-600" required>
+        </div>
+        <div>
+          <label class="text-sm">Duration (Months)</label>
+          <input v-model.number="emiForm.duration_months" type="number" min="1" class="w-full border rounded p-2 bg-white dark:bg-slate-700 dark:border-slate-600" required>
+        </div>
+        <div>
+          <label class="text-sm">First Payment Date</label>
+          <input v-model="emiForm.start_date" type="date" class="w-full border rounded p-2 bg-white dark:bg-slate-700 dark:border-slate-600" required>
+        </div>
+        <div>
+          <label class="text-sm">Note (optional)</label>
+          <input v-model="emiForm.note" placeholder="e.g., Car Loan" class="w-full border rounded p-2 bg-white dark:bg-slate-700 dark:border-slate-600">
+        </div>
+        <div class="flex justify-end">
+            <button class="px-4 py-2 rounded-xl bg-purple-600 text-white hover:opacity-90">Add Plan</button>
+        </div>
+      </form>
+      
+      <div class="grid md:grid-cols-2 gap-6">
+          
+          <div>
+              <h3 class="text-lg font-semibold mt-2 mb-2">Upcoming Payments (To Be Paid)</h3>
+              <table class="w-full text-left table-auto">
+                <thead>
+                  <tr class="bg-slate-100 dark:bg-slate-700">
+                    <th class="p-2">Plan ID</th>
+                    <th class="p-2">Month</th>
+                    <th class="p-2">Amount</th>
+                    <th class="p-2">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="payment in upcomingEMIPayments" :key="payment.emi_key" class="border-b dark:border-slate-700">
+                    <td class="p-2">{{ payment.plan_id }}</td>
+                    <td class="p-2">{{ payment.month }}</td>
+                    <td class="p-2">${{ payment.amount.toFixed(2) }}</td>
+                    <td class="p-2">
+                        <button @click="markEMIPaid(payment.plan_id, payment.due_date)" class="px-3 py-1 text-sm rounded bg-green-500 text-white hover:bg-green-600">Done/Paid</button>
+                    </td>
+                  </tr>
+                  <tr v-if="upcomingEMIPayments.length === 0">
+                    <td colspan="4" class="p-2 text-center text-gray-500 italic">No upcoming EMI payments.</td>
+                  </tr>
+                </tbody>
+              </table>
+          </div>
+          
+          <div>
+              <h3 class="text-lg font-semibold mt-2 mb-2">EMI Plan Summary</h3>
+              <table class="w-full text-left table-auto">
+                <thead>
+                  <tr class="bg-slate-100 dark:bg-slate-700">
+                    <th class="p-2">ID</th>
+                    <th class="p-2">Name</th>
+                    <th class="p-2">Total Amount</th>
+                    <th class="p-2">Last Due Date</th>
+                    <th class="p-2">Paid</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="plan in emiPlans" :key="plan.id" class="border-b dark:border-slate-700">
+                    <td class="p-2">{{ plan.id }}</td>
+                    <td class="p-2">{{ plan.note || 'N/A' }}</td>
+                    <td class="p-2">${{ plan.amount.toFixed(2) }}</td>
+                    <td class="p-2">{{ plan.last_date }}</td>
+                    <td class="p-2">{{ plan.total_paid }} / {{ plan.total_payments }}</td>
+                  </tr>
+                  <tr v-if="emiPlans.length === 0">
+                    <td colspan="5" class="p-2 text-center text-gray-500 italic">No EMI plans recorded.</td>
+                  </tr>
+                </tbody>
+              </table>
+          </div>
+          
+      </div>
+
+    </section>
+    
+    <hr class="border-slate-200 dark:border-slate-700" />
+    
+    <section class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
+      <h2 class="text-xl font-semibold mb-2">Calendar • expenses total + diary</h2>
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-xl font-semibold">Calendar • expenses total + diary</h2>
         <div class="flex gap-2 items-center">
           <input v-model.number="filters.month" type="number" min="1" max="12" class="w-20 border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
           <input v-model.number="filters.year" type="number" min="2000" max="2100" class="w-24 border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
@@ -110,6 +229,8 @@
       </div>
       <div id="calendar"></div>
     </section>
+    
+    <hr class="border-slate-200 dark:border-slate-700" />
 
     <section class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
       <h2 class="text-xl font-semibold mb-2">Recent Diary Entries</h2>
@@ -120,6 +241,8 @@
         </div>
       </div>
     </section>
+
+    <hr class="border-slate-200 dark:border-slate-700" />
 
     <section class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
       <h2 class="text-xl font-semibold mb-2">Expense List</h2>
@@ -210,6 +333,14 @@ const { createApp, onMounted, ref } = Vue
     setup() {
       const expenseForm = ref({ date: new Date().toISOString().slice(0,10), category: '', amount: '', note: '' })
       const diaryForm = ref({ date: new Date().toISOString().slice(0,10), content: '' })
+      const earningForm = ref({ date: new Date().toISOString().slice(0,10), amount: '', source: '' })
+      const emiForm = ref({ start_date: new Date().toISOString().slice(0,10), amount: '', duration_months: 12, note: '' })
+      
+      const profitSummary = ref({ profit: 0.0, total_earnings: 0.0, total_expenses: 0.0 })
+      
+      const emiPlans = ref([]) // New: To store plan summary data
+      const upcomingEMIPayments = ref([]) // Updated: To store upcoming payments with action button
+      
       const diary = ref([])
       const expenses = ref([])
       const selectedMonth = ref(new Date().toISOString().slice(0, 7))
@@ -229,7 +360,7 @@ const { createApp, onMounted, ref } = Vue
       })
   
       let pieChart = null
-      let lineChart = null
+      let financialLineChart = null
       let calendar = null
   
       const submitExpense = async () => {
@@ -248,7 +379,30 @@ const { createApp, onMounted, ref } = Vue
         await loadDiary()
         await loadCalendar()
       }
+      
+      const submitEarning = async () => {
+        await axios.post('/api/earnings', earningForm.value)
+        earningForm.value.amount = ''
+        earningForm.value.source = ''
+        await loadCharts()
+      }
 
+      const submitEMIPlan = async () => {
+        await axios.post('/api/emi', emiForm.value)
+        emiForm.value.amount = ''
+        emiForm.value.note = ''
+        emiForm.value.duration_months = 12
+        await fetchEMIPayments()
+      }
+      
+      // New: Mark EMI as Paid
+      const markEMIPaid = async (plan_id, due_date) => {
+          if (confirm(`Mark EMI for Plan ID ${plan_id} due on ${due_date} as PAID?`)) {
+              await axios.post('/api/emi/paid', { plan_id, due_date })
+              await fetchEMIPayments() // Reload tables to reflect changes
+          }
+      }
+      
       const fetchExpenses = async () => {
         const [year, month] = selectedMonth.value.split('-')
         const res = await axios.get('/api/expenses', { params: { year, month } })
@@ -282,9 +436,18 @@ const { createApp, onMounted, ref } = Vue
         const res = await axios.get('/api/diary', { params: { year: filters.value.year, month: filters.value.month } })
         diary.value = res.data.slice(0, 8) 
       }
+      
+      // Updated: Fetch EMI Payments
+      const fetchEMIPayments = async () => {
+        const res = await axios.get('/api/emi')
+        // The API now returns an object with 'plans' and 'upcoming_payments'
+        emiPlans.value = res.data.plans
+        upcomingEMIPayments.value = res.data.upcoming_payments
+      }
   
       const loadCharts = async () => {
         
+        // 1. Pie Chart (Monthly Categories)
         const pieRes = await axios.get('/api/expenses/summary/monthly', { params: filters.value })
         const labels = pieRes.data.data.map(d => d.category)
         const values = pieRes.data.data.map(d => d.total)
@@ -297,13 +460,22 @@ const { createApp, onMounted, ref } = Vue
         })
         
         
-        const lineRes = await axios.get('/api/expenses/summary/yearly', { params: { year: filters.value.year } })
+        // 2. Financial Line Chart (Yearly Earnings vs Expenses)
+        const financialRes = await axios.get('/api/summary/yearly_financials', { params: { year: filters.value.year } })
+        profitSummary.value = financialRes.data 
+        
         const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-        const lineCtx = document.getElementById('lineChart')
-        if (lineChart) lineChart.destroy()
-        lineChart = new Chart(lineCtx, {
+        const lineCtx = document.getElementById('financialLineChart')
+        if (financialLineChart) financialLineChart.destroy()
+        financialLineChart = new Chart(lineCtx, {
           type: 'line',
-          data: { labels: months, datasets: [{ label: `Total ${filters.value.year}`, data: lineRes.data.series, tension: 0.2, borderColor: '#4F46E5', backgroundColor: '#4F46E5' }] },
+          data: { 
+            labels: months, 
+            datasets: [
+              { label: `Earnings ${filters.value.year}`, data: financialRes.data.monthly_earnings, tension: 0.2, borderColor: '#10B981', backgroundColor: '#10B981', fill: false }, 
+              { label: `Expenses ${filters.value.year}`, data: financialRes.data.monthly_expenses, tension: 0.2, borderColor: '#EF4444', backgroundColor: '#EF4444', fill: false } 
+            ] 
+          },
           options: { responsive: true, plugins: { legend: { display: true, labels: { color: isDarkMode.value ? '#E2E8F0' : '#1E293B' } } }, scales: { y: { ticks: { color: isDarkMode.value ? '#E2E8F0' : '#1E293B' }, grid: { color: isDarkMode.value ? 'rgba(241, 245, 249, 0.1)' : 'rgba(30, 41, 59, 0.1)' } }, x: { ticks: { color: isDarkMode.value ? '#E2E8F0' : '#1E293B' }, grid: { color: isDarkMode.value ? 'rgba(241, 245, 249, 0.1)' : 'rgba(30, 41, 59, 0.1)' } } } }
         })
       }
@@ -355,9 +527,20 @@ const { createApp, onMounted, ref } = Vue
         await loadCalendar()
         await loadDiary()
         await fetchExpenses()
+        await fetchEMIPayments()
       })
   
-      return { expenseForm, diaryForm, diary, filters, submitExpense, submitDiary, loadCharts, loadCalendar, expenses, selectedMonth, fetchExpenses, editingId, editData, startEdit, saveEdit, deleteExpense, showModal, modalDate, modalExpenses, modalDiary, isDarkMode, toggleDarkMode }
+      return { 
+        expenseForm, diaryForm, earningForm, emiForm, 
+        diary, expenses, filters, 
+        submitExpense, submitDiary, submitEarning, submitEMIPlan, markEMIPaid, // Added markEMIPaid
+        loadCharts, loadCalendar, 
+        expenses, selectedMonth, fetchExpenses, 
+        editingId, editData, startEdit, saveEdit, deleteExpense, 
+        showModal, modalDate, modalExpenses, modalDiary, 
+        isDarkMode, toggleDarkMode, profitSummary, 
+        emiPlans, upcomingEMIPayments, fetchEMIPayments // Updated EMI state
+      }
     }
   }).mount('#app')
   
