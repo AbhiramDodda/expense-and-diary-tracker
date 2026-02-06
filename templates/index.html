@@ -11,7 +11,6 @@
     }
   </script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
@@ -30,7 +29,6 @@
         </button>
       </div>
     </header>
-
     <section class="grid md:grid-cols-3 gap-6">
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
         <h2 class="text-xl font-semibold mb-2">Add Expense</h2>
@@ -56,7 +54,6 @@
           </div>
         </form>
       </div>
-
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
         <h2 class="text-xl font-semibold mb-2">Add Diary Entry (encrypted at rest)</h2>
         <form @submit.prevent="submitDiary" class="space-y-2">
@@ -73,7 +70,6 @@
           </div>
         </form>
       </div>
-      
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
         <h2 class="text-xl font-semibold mb-2">Add Earning (Biweekly)</h2>
         <form @submit.prevent="submitEarning" class="grid grid-cols-2 gap-3">
@@ -95,7 +91,6 @@
         </form>
       </div>
     </section>
-    
     <hr class="border-slate-200 dark:border-slate-700" />
 
     <section class="grid md:grid-cols-3 gap-6">
@@ -127,7 +122,6 @@
         <canvas id="financialLineChart"></canvas>
       </div>
     </section>
-
     <hr class="border-slate-200 dark:border-slate-700" />
     
     <section class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
@@ -158,64 +152,105 @@
       
       <div class="grid md:grid-cols-2 gap-6">
           
-          <div>
+          <div class="flex flex-col h-full">
               <h3 class="text-lg font-semibold mt-2 mb-2">Upcoming Payments (To Be Paid)</h3>
-              <table class="w-full text-left table-auto">
-                <thead>
-                  <tr class="bg-slate-100 dark:bg-slate-700">
-                    <th class="p-2">Plan ID</th>
-                    <th class="p-2">Month</th>
-                    <th class="p-2">Amount</th>
-                    <th class="p-2">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="payment in upcomingEMIPayments" :key="payment.emi_key" class="border-b dark:border-slate-700">
-                    <td class="p-2">{{ payment.plan_id }}</td>
-                    <td class="p-2">{{ payment.month }}</td>
-                    <td class="p-2">${{ payment.amount.toFixed(2) }}</td>
-                    <td class="p-2">
-                        <button @click="markEMIPaid(payment.plan_id, payment.due_date)" class="px-3 py-1 text-sm rounded bg-green-500 text-white hover:bg-green-600">Done/Paid</button>
-                    </td>
-                  </tr>
-                  <tr v-if="upcomingEMIPayments.length === 0">
-                    <td colspan="4" class="p-2 text-center text-gray-500 italic">No upcoming EMI payments.</td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="flex-grow max-h-80 overflow-y-auto border rounded-xl dark:border-slate-700 relative">
+                  <table class="w-full text-left table-auto">
+                    <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-700 shadow-sm">
+                      <tr>
+                        <th class="p-2">Plan ID</th>
+                        <th class="p-2">Month</th>
+                        <th class="p-2">Amount</th>
+                        <th class="p-2">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                      <tr v-for="payment in upcomingEMIPayments" :key="payment.emi_key" class="bg-white dark:bg-slate-800">
+                        <td class="p-2">{{ payment.plan_id }}</td>
+                        <td class="p-2">{{ payment.month }}</td>
+                        <td class="p-2">${{ payment.amount.toFixed(2) }}</td>
+                        <td class="p-2">
+                            <button @click="markEMIPaid(payment.plan_id, payment.due_date)" class="px-3 py-1 text-xs rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors">Paid</button>
+                        </td>
+                      </tr>
+                      <tr v-if="upcomingEMIPayments.length === 0">
+                        <td colspan="4" class="p-4 text-center text-gray-500 italic">No upcoming EMI payments.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+              </div>
           </div>
           
-          <div>
+          <div class="flex flex-col h-full">
               <h3 class="text-lg font-semibold mt-2 mb-2">EMI Plan Summary</h3>
-              <table class="w-full text-left table-auto">
-                <thead>
-                  <tr class="bg-slate-100 dark:bg-slate-700">
-                    <th class="p-2">ID</th>
-                    <th class="p-2">Name</th>
-                    <th class="p-2">Total Amount</th>
-                    <th class="p-2">Last Due Date</th>
-                    <th class="p-2">Paid</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="plan in emiPlans" :key="plan.id" class="border-b dark:border-slate-700">
-                    <td class="p-2">{{ plan.id }}</td>
-                    <td class="p-2">{{ plan.note || 'N/A' }}</td>
-                    <td class="p-2">${{ plan.amount.toFixed(2) }}</td>
-                    <td class="p-2">{{ plan.last_date }}</td>
-                    <td class="p-2">{{ plan.total_paid }} / {{ plan.total_payments }}</td>
-                  </tr>
-                  <tr v-if="emiPlans.length === 0">
-                    <td colspan="5" class="p-2 text-center text-gray-500 italic">No EMI plans recorded.</td>
-                  </tr>
-                </tbody>
-              </table>
-          </div>
-          
-      </div>
+              <div class="flex-grow max-h-96 overflow-y-auto border rounded-xl dark:border-slate-700 relative">
+                  <table class="w-full text-left table-auto">
+                    <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-700 shadow-sm">
+                      <tr>
+                        <th class="p-2">ID</th>
+                        <th class="p-2">Name / Due</th>
+                        <th class="p-2">Amount</th>
+                        <th class="p-2">Progress</th>
+                        <th class="p-2">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
 
+                      <template v-for="plan in emiPlans" :key="plan.id">
+                        <!-- ─── NORMAL ROW ─── -->
+                        <tr v-if="emiEditingId !== plan.id" class="bg-white dark:bg-slate-800">
+                          <td class="p-2">{{ plan.id }}</td>
+                          <td class="p-2">
+                              <div class="font-medium">{{ plan.note || 'N/A' }}</div>
+                              <div class="text-xs opacity-60">Due: {{ plan.last_date }}</div>
+                          </td>
+                          <td class="p-2">${{ plan.amount.toFixed(2) }}</td>
+                          <td class="p-2">
+                               <span class="text-xs font-mono bg-slate-200 dark:bg-slate-600 px-2 py-1 rounded">{{ plan.total_paid }}/{{ plan.total_payments }}</span>
+                          </td>
+                          <td class="p-2 flex flex-wrap gap-1">
+                            <button @click="startEMIEdit(plan)" class="px-2 py-1 text-xs rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors">Edit</button>
+                            <button @click="deleteEMIPlan(plan)" class="px-2 py-1 text-xs rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors">Delete</button>
+                          </td>
+                        </tr>
+
+                        <!-- ─── EDIT ROW ─── -->
+                        <tr v-else class="bg-purple-50 dark:bg-slate-700">
+                          <td class="p-2 text-sm font-bold text-purple-700 dark:text-purple-300">#{{ plan.id }}</td>
+                          <!-- note input -->
+                          <td class="p-2">
+                            <input v-model="emiEditData.note" placeholder="Plan name" class="w-full border rounded p-1 text-sm bg-white dark:bg-slate-600 dark:border-slate-500">
+                          </td>
+                          <!-- paid / remaining info -->
+                          <td class="p-2 text-xs">
+                            <div class="text-green-600 dark:text-green-400 font-semibold">Paid: ${{ (plan.total_paid * plan.monthly_payment).toFixed(2) }}</div>
+                            <div class="text-purple-600 dark:text-purple-300 font-semibold">Remaining: ${{ (plan.amount - plan.total_paid * plan.monthly_payment).toFixed(2) }}</div>
+                          </td>
+                          <!-- new duration + live preview -->
+                          <td class="p-2 text-xs">
+                            <label class="block opacity-70 mb-0.5">New months</label>
+                            <input v-model.number="emiEditData.duration_months" type="number" min="1" class="w-20 border rounded p-1 bg-white dark:bg-slate-600 dark:border-slate-500">
+                            <div class="mt-1 text-purple-600 dark:text-purple-300 font-semibold" v-if="emiEditData.duration_months > 0">
+                              → ${{ ((plan.amount - plan.total_paid * plan.monthly_payment) / emiEditData.duration_months).toFixed(2) }}/mo
+                            </div>
+                          </td>
+                          <!-- save / cancel -->
+                          <td class="p-2 flex flex-wrap gap-1">
+                            <button @click="saveEMIEdit(plan.id)" class="px-2 py-1 text-xs rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors">Save</button>
+                            <button @click="cancelEMIEdit()" class="px-2 py-1 text-xs rounded-lg bg-slate-400 text-white hover:bg-slate-500 transition-colors">Cancel</button>
+                          </td>
+                        </tr>
+                      </template>
+
+                      <tr v-if="emiPlans.length === 0">
+                        <td colspan="5" class="p-4 text-center text-gray-500 italic">No EMI plans recorded.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+              </div>
+          </div>
+      </div>
     </section>
-    
     <hr class="border-slate-200 dark:border-slate-700" />
     
     <section class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
@@ -284,7 +319,6 @@
         </tbody>
       </table>
     </section>
-    
     <div v-if="showModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full flex items-center justify-center z-50">
       <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-xl w-11/12 md:max-w-3xl">
         <div class="flex justify-between items-center mb-4">
@@ -307,7 +341,6 @@
               No expenses recorded.
             </div>
           </div>
-          
           <div>
             <h4 class="font-semibold mb-2 text-lg">Diary Entries:</h4>
             <div v-if="modalDiary.length > 0">
@@ -320,6 +353,32 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <h3 class="text-xl font-semibold mb-4">Lifetime Performance</h3>
+        <div class="space-y-4" v-if="lifetimeData">
+          <div class="flex justify-between">
+            <span>Total Earnings:</span>
+            <span class="text-green-600 font-bold">${{ lifetimeData.total_earnings.toFixed(2) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Total Expenses:</span>
+            <span class="text-red-600 font-bold">${{ lifetimeData.total_expenses.toFixed(2) }}</span>
+          </div>
+          <div class="border-t pt-2 flex justify-between">
+            <span>Lifetime Profit:</span>
+            <span :class="lifetimeData.lifetime_profit >= 0 ? 'text-emerald-500' : 'text-rose-500'" class="font-black text-lg">
+              ${{ lifetimeData.lifetime_profit.toFixed(2) }}
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 mt-2">Tracking since: {{ lifetimeData.earliest_date }}</p>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <h3 class="text-xl font-semibold mb-2">Last 12 Months Trend</h3>
+        <canvas id="rollingTrendChart"></canvas>
       </div>
     </div>
   {% endraw %}
@@ -338,8 +397,12 @@ const { createApp, onMounted, ref } = Vue
       
       const profitSummary = ref({ profit: 0.0, total_earnings: 0.0, total_expenses: 0.0 })
       
-      const emiPlans = ref([]) // New: To store plan summary data
-      const upcomingEMIPayments = ref([]) // Updated: To store upcoming payments with action button
+      const emiPlans = ref([]) 
+      const upcomingEMIPayments = ref([]) 
+
+      // EMI inline-edit state
+      const emiEditingId = ref(null)
+      const emiEditData  = ref({})
       
       const diary = ref([])
       const expenses = ref([])
@@ -395,14 +458,47 @@ const { createApp, onMounted, ref } = Vue
         await fetchEMIPayments()
       }
       
-      // New: Mark EMI as Paid
+      // Updated: Mark EMI as Paid and Refresh all related Data
       const markEMIPaid = async (plan_id, due_date) => {
-          if (confirm(`Mark EMI for Plan ID ${plan_id} due on ${due_date} as PAID?`)) {
+          if (confirm(`Mark EMI for Plan ID ${plan_id} due on ${due_date} as PAID? This will also add a corresponding Expense entry.`)) {
               await axios.post('/api/emi/paid', { plan_id, due_date })
-              await fetchEMIPayments() // Reload tables to reflect changes
+              
+              // Refresh EMI tables
+              await fetchEMIPayments()
+              
+              // Refresh Charts, Calendar, and Expense List to show the new auto-added expense
+              await loadCharts()
+              await loadCalendar()
+              await fetchExpenses()
           }
       }
-      
+
+      // ── EMI Delete ──────────────────────────────
+      const deleteEMIPlan = async (plan) => {
+        if (!confirm(`Delete EMI Plan #${plan.id} ("${plan.note || 'N/A'}")?\nThis removes the plan and all unpaid scheduled installments.`)) return
+        await axios.delete(`/api/emi/${plan.id}`)
+        await fetchEMIPayments()
+      }
+
+      // ── EMI Edit (mid-plan recalc) ──────────────
+      const startEMIEdit = (plan) => {
+        emiEditingId.value = plan.id
+        emiEditData.value = {
+          duration_months: plan.total_payments - plan.total_paid,
+          note: plan.note
+        }
+      }
+      const cancelEMIEdit = () => {
+        emiEditingId.value = null
+        emiEditData.value = {}
+      }
+      const saveEMIEdit = async (planId) => {
+        await axios.put(`/api/emi/${planId}`, emiEditData.value)
+        emiEditingId.value = null
+        emiEditData.value = {}
+        await fetchEMIPayments()
+      }
+
       const fetchExpenses = async () => {
         const [year, month] = selectedMonth.value.split('-')
         const res = await axios.get('/api/expenses', { params: { year, month } })
@@ -437,17 +533,14 @@ const { createApp, onMounted, ref } = Vue
         diary.value = res.data.slice(0, 8) 
       }
       
-      // Updated: Fetch EMI Payments
       const fetchEMIPayments = async () => {
         const res = await axios.get('/api/emi')
-        // The API now returns an object with 'plans' and 'upcoming_payments'
         emiPlans.value = res.data.plans
         upcomingEMIPayments.value = res.data.upcoming_payments
       }
   
       const loadCharts = async () => {
-        
-        // 1. Pie Chart (Monthly Categories)
+        // 1. Pie Chart
         const pieRes = await axios.get('/api/expenses/summary/monthly', { params: filters.value })
         const labels = pieRes.data.data.map(d => d.category)
         const values = pieRes.data.data.map(d => d.total)
@@ -459,8 +552,7 @@ const { createApp, onMounted, ref } = Vue
           options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: isDarkMode.value ? '#E2E8F0' : '#1E293B' } } } }
         })
         
-        
-        // 2. Financial Line Chart (Yearly Earnings vs Expenses)
+        // 2. Financial Line Chart
         const financialRes = await axios.get('/api/summary/yearly_financials', { params: { year: filters.value.year } })
         profitSummary.value = financialRes.data 
         
@@ -516,7 +608,51 @@ const { createApp, onMounted, ref } = Vue
         loadCharts()
       }
 
-      // Check for dark mode preference on load
+      const lifetimeData = ref(null);
+      let rollingChart = null;
+      const loadRollingTrend = async () => {
+        const lifeRes = await axios.get('/api/summary/lifetime_stats');
+        lifetimeData.value = lifeRes.data;
+        const monthlyRes = await axios.get('/api/summary/rolling_12_months');
+        const data = monthlyRes.data.data;
+        const ctx = document.getElementById('rollingTrendChart').getContext('2d');
+        if (rollingChart) rollingChart.destroy();
+
+        rollingChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: data.map(m => m.month),
+            datasets: [
+              {
+                label: 'Earnings',
+                data: data.map(m => m.earnings),
+                borderColor: '#10b981',
+                backgroundColor: '#10b98133',
+                fill: true,
+                tension: 0.4
+              },
+              {
+                label: 'Expenses',
+                data: data.map(m => m.expenses),
+                borderColor: '#f43f5e',
+                backgroundColor: '#f43f5e33',
+                fill: true,
+                tension: 0.4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'bottom' }
+            },
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+      };
+
       onMounted(async () => {
         if (localStorage.getItem('darkMode') === 'true') {
           isDarkMode.value = true
@@ -528,22 +664,24 @@ const { createApp, onMounted, ref } = Vue
         await loadDiary()
         await fetchExpenses()
         await fetchEMIPayments()
+        await loadRollingTrend()
       })
   
       return { 
         expenseForm, diaryForm, earningForm, emiForm, 
         diary, expenses, filters, 
-        submitExpense, submitDiary, submitEarning, submitEMIPlan, markEMIPaid, // Added markEMIPaid
+        submitExpense, submitDiary, submitEarning, submitEMIPlan, markEMIPaid,
+        deleteEMIPlan, emiEditingId, emiEditData, startEMIEdit, saveEMIEdit, cancelEMIEdit,
         loadCharts, loadCalendar, 
         expenses, selectedMonth, fetchExpenses, 
         editingId, editData, startEdit, saveEdit, deleteExpense, 
         showModal, modalDate, modalExpenses, modalDiary, 
         isDarkMode, toggleDarkMode, profitSummary, 
-        emiPlans, upcomingEMIPayments, fetchEMIPayments // Updated EMI state
+        emiPlans, upcomingEMIPayments, fetchEMIPayments, lifetimeData,
+        loadRollingTrend
       }
     }
   }).mount('#app')
-  
 {% endraw %}
 </script>
 </body>

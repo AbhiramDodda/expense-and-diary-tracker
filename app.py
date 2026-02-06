@@ -9,12 +9,10 @@ from dateutil.relativedelta import relativedelta
 
 app = Flask(__name__)
 CORS(app)
-
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_PATH = os.path.join(BASE_DIR, "app.db")
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
 db = SQLAlchemy(app)
 
 def get_fernet():
@@ -38,17 +36,11 @@ def decrypt_text(cipher: bytes) -> str:
     
 def calculate_emi_schedule(plan):
     payments = []
-    
-    # Get all paid payments for this plan
     paid_dates = {p.due_date.isoformat() for p in plan.payments.all()}
-    
-    # Calculate scheduled payments
     for i in range(plan.duration_months):
         # Calculate the payment due date: start_date + i months
         due_date = plan.start_date + relativedelta(months=+i)
-        
         date_str = due_date.isoformat()
-        
         payments.append({
             "plan_id": plan.id,
             "emi_key": f"{plan.id}-{date_str}", # Unique key for payment
@@ -58,7 +50,6 @@ def calculate_emi_schedule(plan):
             "note": plan.note,
             "is_paid": date_str in paid_dates
         })
-
     return payments
 
 class Expense(db.Model):
@@ -97,7 +88,6 @@ class EMIPayment(db.Model):
 @app.route("/")
 def index():
     return render_template("index.html")
-
 
 @app.post("/api/expenses")
 def add_expense():
@@ -221,8 +211,6 @@ def calendar_totals():
     """
     year = request.args.get("year", type=int, default=date.today().year)
     month = request.args.get("month", type=int, default=date.today().month)
-
-    # Expenses per day
     q1 = db.session.query(
         func.strftime("%Y-%m-%d", Expense.date),
         func.sum(Expense.amount)
@@ -230,10 +218,7 @@ def calendar_totals():
         func.strftime("%Y", Expense.date) == f"{year:04d}",
         func.strftime("%m", Expense.date) == f"{month:02d}"
     ).group_by(func.strftime("%Y-%m-%d", Expense.date))
-
     expenses_map = {d: float(t) for d, t in q1}
-
-    # Diary counts per day
     q2 = db.session.query(
         func.strftime("%Y-%m-%d", DiaryEntry.date),
         func.count(DiaryEntry.id)
@@ -241,10 +226,7 @@ def calendar_totals():
         func.strftime("%Y", DiaryEntry.date) == f"{year:04d}",
         func.strftime("%m", DiaryEntry.date) == f"{month:02d}"
     ).group_by(func.strftime("%Y-%m-%d", DiaryEntry.date))
-
     diary_map = {d: int(c) for d, c in q2}
-
-    # Merge
     all_days = set(expenses_map.keys()) | set(diary_map.keys())
     result = [{
         "date": d,
@@ -252,11 +234,6 @@ def calendar_totals():
         "diary_count": diary_map.get(d, 0)
     } for d in sorted(all_days)]
     return jsonify({"year": year, "month": month, "days": result})
-
-# app.py (after the existing expense endpoints)
-# ...
-
-# Earnings
 
 @app.post("/api/earnings")
 def add_earning():
@@ -275,13 +252,11 @@ def add_earning():
 def list_earnings():
     year = request.args.get("year", type=int)
     month = request.args.get("month", type=int)
-
     q = Earning.query
     if year:
         q = q.filter(func.strftime("%Y", Earning.date) == f"{year:04d}")
     if month:
         q = q.filter(func.strftime("%m", Earning.date) == f"{month:02d}")
-
     items = q.order_by(Earning.date.desc(), Earning.id.desc()).all()
     return jsonify([{
         "id": e.id,
@@ -290,13 +265,9 @@ def list_earnings():
         "source": e.source or ""
     } for e in items])
 
-# app.py (near yearly_line endpoint)
-# ...
 @app.get("/api/summary/yearly_financials")
 def yearly_financials():
     year = request.args.get("year", type=int, default=date.today().year)
-
-    # Expenses per month
     q_exp = db.session.query(
         func.strftime("%m", Expense.date).label("m"),
         func.sum(Expense.amount).label("total")
@@ -304,8 +275,6 @@ def yearly_financials():
         func.strftime("%Y", Expense.date) == f"{year:04d}"
     ).group_by("m")
     expenses_totals = {int(m): float(total) for m, total in q_exp}
-
-    # Earnings per month
     q_earn = db.session.query(
         func.strftime("%m", Earning.date).label("m"),
         func.sum(Earning.amount).label("total")
@@ -313,16 +282,11 @@ def yearly_financials():
         func.strftime("%Y", Earning.date) == f"{year:04d}"
     ).group_by("m")
     earnings_totals = {int(m): float(total) for m, total in q_earn}
-
-    # Format for chart
     monthly_expenses = [expenses_totals.get(m, 0.0) for m in range(1, 13)]
     monthly_earnings = [earnings_totals.get(m, 0.0) for m in range(1, 13)]
-    
-    # Calculate Year-to-Date Totals
     total_expenses = sum(monthly_expenses)
     total_earnings = sum(monthly_earnings)
     profit = total_earnings - total_expenses
-
     return jsonify({
         "year": year, 
         "monthly_expenses": monthly_expenses,
@@ -332,30 +296,19 @@ def yearly_financials():
         "profit": profit
     })
 
-# app.py (after the earnings endpoints)
-# ...
-
-# EMI
-
 @app.post("/api/emi")
 def add_emi_plan():
     data = request.get_json(force=True)
     amount = float(data["amount"])
     duration_months = int(data["duration_months"])
     note = data.get("note", "")
-    
     if duration_months <= 0:
         return jsonify({"status": "error", "message": "Duration must be greater than 0"}), 400
-
     monthly_payment = amount / duration_months
-    
     dt = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
-    
-    # Check for existing plan with the same note and start date (to avoid duplicates, simple check)
     existing_plan = EMIPlan.query.filter_by(note=note, start_date=dt).first()
     if existing_plan:
         return jsonify({"status": "error", "message": "A plan with this note and start date already exists."}), 409
-
     emi = EMIPlan(
         start_date=dt,
         amount=amount,
@@ -369,18 +322,13 @@ def add_emi_plan():
 
 @app.get("/api/emi")
 def list_emi_plans():
-    # 1. Fetch all EMI plans
     plans = EMIPlan.query.order_by(EMIPlan.start_date.desc(), EMIPlan.id.desc()).all()
-    
     plans_list = []
     all_payments = []
-    
     for plan in plans:
         # Calculate the payments and update status (paid/unpaid)
         payments_schedule = calculate_emi_schedule(plan)
         all_payments.extend(payments_schedule)
-        
-        # Calculate last due date for the summary table
         last_date = plan.start_date + relativedelta(months=+(plan.duration_months - 1))
         
         plans_list.append({
@@ -394,36 +342,92 @@ def list_emi_plans():
             "total_paid": len([p for p in payments_schedule if p['is_paid']]),
             "total_payments": plan.duration_months
         })
-
-    # Filter upcoming/unpaid payments for the first table
     upcoming_payments = [p for p in all_payments if not p['is_paid'] and p['due_date'] >= date.today().isoformat()]
-
-    # Sort upcoming payments by due date
     upcoming_payments.sort(key=lambda x: x['due_date'])
-
     return jsonify({"plans": plans_list, "upcoming_payments": upcoming_payments})
-
-
+ 
 @app.post("/api/emi/paid")
 def mark_emi_paid():
     data = request.get_json(force=True)
     plan_id = int(data["plan_id"])
     due_date_str = data["due_date"]
-    
     due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
-
-    # Find or create the EMIPayment record
+    plan = EMIPlan.query.get_or_404(plan_id)
     payment = EMIPayment.query.filter_by(plan_id=plan_id, due_date=due_date).first()
-    
     if not payment:
         payment = EMIPayment(plan_id=plan_id, due_date=due_date, paid=True)
         db.session.add(payment)
     else:
-        # Toggle or ensure paid=True
+        if payment.paid:
+             return jsonify({"status": "ok", "message": "Already paid"}), 200
         payment.paid = True
-
+    category_name = f"EMI - {plan.note}" if plan.note else "EMI"
+    new_expense = Expense(
+        date=due_date,
+        category=category_name,
+        amount=plan.monthly_payment,
+        note=f"Auto-generated payment for EMI Plan #{plan.id}"
+    )
+    db.session.add(new_expense)
     db.session.commit()
     return jsonify({"status": "ok", "plan_id": plan_id, "due_date": due_date_str}), 200
+
+@app.put("/api/emi/<int:emi_id>")
+def edit_emi_plan(emi_id):
+    """
+    Edit an EMI plan mid-way.
+      remaining          = plan.amount - (paid_count * plan.monthly_payment)
+      new_monthly_payment = remaining / new_duration   (i.e. (x-y)/period)
+    """
+    data = request.get_json(force=True)
+    plan = EMIPlan.query.get_or_404(emi_id)
+
+    # ── read everything we need BEFORE touching the plan object ──
+    paid_count   = EMIPayment.query.filter_by(plan_id=emi_id, paid=True).count()
+    remaining    = plan.amount - (paid_count * plan.monthly_payment)   # x - y
+
+    # compute the current full schedule so we can find the first unpaid date
+    schedule_before = calculate_emi_schedule(plan)   # uses the ORIGINAL values
+
+    # ── validate ──
+    if remaining <= 0:
+        return jsonify({"status": "error", "message": "Plan is already fully paid."}), 400
+
+    new_duration = int(data.get("duration_months", plan.duration_months - paid_count))
+    if new_duration <= 0:
+        return jsonify({"status": "error", "message": "New duration must be > 0."}), 400
+
+    new_monthly = round(remaining / new_duration, 2)
+
+    # ── find the first unpaid due-date from the schedule we already captured ──
+    first_unpaid_date = None
+    for slot in schedule_before:
+        if not slot["is_paid"]:
+            first_unpaid_date = datetime.strptime(slot["due_date"], "%Y-%m-%d").date()
+            break
+    if first_unpaid_date is None:
+        last_paid = plan.start_date + relativedelta(months=+(paid_count - 1))
+        first_unpaid_date = last_paid + relativedelta(months=+1)
+
+    # ── NOW mutate the plan ──
+    plan.amount          = round(remaining, 2)
+    plan.duration_months = paid_count + new_duration
+    plan.monthly_payment = new_monthly
+    # shift start_date so the generator rebuilds unpaid slots from first_unpaid_date
+    plan.start_date      = first_unpaid_date - relativedelta(months=+paid_count)
+    if "note" in data:
+        plan.note = data["note"]
+
+    db.session.commit()
+
+    return jsonify({
+        "status": "ok",
+        "id": plan.id,
+        "remaining": plan.amount,
+        "new_monthly_payment": new_monthly,
+        "new_duration_months": new_duration,
+        "paid_count": paid_count
+    }), 200
 
 @app.delete("/api/emi/<int:emi_id>")
 def delete_emi_plan(emi_id):
@@ -432,6 +436,58 @@ def delete_emi_plan(emi_id):
     db.session.commit()
     return jsonify({"status": "ok", "id": emi.id}), 200
 
+@app.get("/api/summary/rolling_12_months")
+def rolling_12_months():
+    today = date.today()
+    months_data = []
+    for i in range(11, -1, -1):  # 11 months ago to current month
+        target_date = today - relativedelta(months=i)
+        year = target_date.year
+        month = target_date.month
+        exp_total = db.session.query(
+            func.sum(Expense.amount)
+        ).filter(
+            func.strftime("%Y", Expense.date) == f"{year:04d}",
+            func.strftime("%m", Expense.date) == f"{month:02d}"
+        ).scalar() or 0.0
+        earn_total = db.session.query(
+            func.sum(Earning.amount)
+        ).filter(
+            func.strftime("%Y", Earning.date) == f"{year:04d}",
+            func.strftime("%m", Earning.date) == f"{month:02d}"
+        ).scalar() or 0.0
+        months_data.append({
+            "month": f"{year}-{month:02d}",
+            "expenses": float(exp_total),
+            "earnings": float(earn_total),
+            "profit": float(earn_total - exp_total)
+        })
+    return jsonify({"data": months_data})
+
+@app.get("/api/summary/lifetime_stats")
+def lifetime_stats():
+    total_expenses = db.session.query(
+        func.sum(Expense.amount)
+    ).scalar() or 0.0
+    total_earnings = db.session.query(
+        func.sum(Earning.amount)
+    ).scalar() or 0.0
+    first_expense = db.session.query(
+        func.min(Expense.date)
+    ).scalar()
+    first_earning = db.session.query(
+        func.min(Earning.date)
+    ).scalar()
+    dates = [d for d in [first_expense, first_earning] if d]
+    earliest_date = min(dates).isoformat() if dates else None
+    
+    return jsonify({
+        "total_expenses": float(total_expenses),
+        "total_earnings": float(total_earnings),
+        "lifetime_profit": float(total_earnings - total_expenses),
+        "earliest_date": earliest_date,
+        "latest_date": date.today().isoformat()
+    })
 
 # # Utility route to initialize DB
 # @app.get("/api/_init_db")
