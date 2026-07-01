@@ -324,13 +324,29 @@ def add_emi_plan():
 def list_emi_plans():
     plans = EMIPlan.query.order_by(EMIPlan.start_date.desc(), EMIPlan.id.desc()).all()
     plans_list = []
+    finished_list = []
     all_payments = []
     for plan in plans:
         # Calculate the payments and update status (paid/unpaid)
         payments_schedule = calculate_emi_schedule(plan)
-        all_payments.extend(payments_schedule)
+        total_paid = len([p for p in payments_schedule if p['is_paid']])
         last_date = plan.start_date + relativedelta(months=+(plan.duration_months - 1))
-        
+
+        # A plan whose every scheduled installment is paid off is "finished" and
+        # gets pushed to a separate archive instead of the active summary/upcoming.
+        if plan.duration_months > 0 and total_paid >= plan.duration_months:
+            finished_list.append({
+                "id": plan.id,
+                "note": plan.note or "",
+                "total_amount": round(plan.monthly_payment * plan.duration_months, 2),
+                "monthly_payment": plan.monthly_payment,
+                "months": plan.duration_months,
+                "start_date": plan.start_date.isoformat(),
+                "end_date": last_date.isoformat()
+            })
+            continue
+
+        all_payments.extend(payments_schedule)
         plans_list.append({
             "id": plan.id,
             "start_date": plan.start_date.isoformat(),
@@ -339,12 +355,17 @@ def list_emi_plans():
             "monthly_payment": plan.monthly_payment,
             "note": plan.note or "",
             "last_date": last_date.isoformat(),
-            "total_paid": len([p for p in payments_schedule if p['is_paid']]),
+            "total_paid": total_paid,
             "total_payments": plan.duration_months
         })
     upcoming_payments = [p for p in all_payments if not p['is_paid'] and p['due_date'] >= date.today().isoformat()]
     upcoming_payments.sort(key=lambda x: x['due_date'])
-    return jsonify({"plans": plans_list, "upcoming_payments": upcoming_payments})
+    finished_list.sort(key=lambda x: x['end_date'], reverse=True)
+    return jsonify({
+        "plans": plans_list,
+        "finished_plans": finished_list,
+        "upcoming_payments": upcoming_payments
+    })
  
 @app.post("/api/emi/paid")
 def mark_emi_paid():
@@ -487,6 +508,119 @@ def lifetime_stats():
         "lifetime_profit": float(total_earnings - total_expenses),
         "earliest_date": earliest_date,
         "latest_date": date.today().isoformat()
+    })
+
+@app.get("/api/analytics/summary")
+def analytics_summary():
+    """High-level analytics used by the advanced dashboard cards."""
+    total_expenses = db.session.query(func.sum(Expense.amount)).scalar() or 0.0
+    total_earnings = db.session.query(func.sum(Earning.amount)).scalar() or 0.0
+    expense_count = db.session.query(func.count(Expense.id)).scalar() or 0
+
+    # How many calendar months of history we have, so averages are meaningful.
+    first_exp = db.session.query(func.min(Expense.date)).scalar()
+    first_earn = db.session.query(func.min(Earning.date)).scalar()
+    dates = [d for d in [first_exp, first_earn] if d]
+    if dates:
+        earliest = min(dates)
+        today = date.today()
+        months_tracked = (today.year - earliest.year) * 12 + (today.month - earliest.month) + 1
+    else:
+        months_tracked = 1
+    months_tracked = max(months_tracked, 1)
+
+    biggest = Expense.query.order_by(Expense.amount.desc()).first()
+    biggest_expense = {
+        "amount": biggest.amount,
+        "category": biggest.category,
+        "date": biggest.date.isoformat(),
+        "note": biggest.note or ""
+    } if biggest else None
+
+    top_cat = db.session.query(
+        Expense.category, func.sum(Expense.amount).label("t")
+    ).group_by(Expense.category).order_by(func.sum(Expense.amount).desc()).first()
+    top_category = {"category": top_cat[0], "total": float(top_cat[1])} if top_cat else None
+
+    # Outstanding EMI = sum of unpaid installments across active (unfinished) plans.
+    emi_outstanding = 0.0
+    active_emi = 0
+    finished_emi = 0
+    for plan in EMIPlan.query.all():
+        schedule = calculate_emi_schedule(plan)
+        total_paid = len([p for p in schedule if p['is_paid']])
+        if plan.duration_months > 0 and total_paid >= plan.duration_months:
+            finished_emi += 1
+        else:
+            active_emi += 1
+            emi_outstanding += max(plan.monthly_payment * (plan.duration_months - total_paid), 0.0)
+
+    return jsonify({
+        "total_expenses": float(total_expenses),
+        "total_earnings": float(total_earnings),
+        "expense_count": int(expense_count),
+        "months_tracked": months_tracked,
+        "avg_monthly_expense": float(total_expenses) / months_tracked,
+        "avg_monthly_earning": float(total_earnings) / months_tracked,
+        "avg_expense": (float(total_expenses) / expense_count) if expense_count else 0.0,
+        "biggest_expense": biggest_expense,
+        "top_category": top_category,
+        "emi_outstanding": round(emi_outstanding, 2),
+        "active_emi": active_emi,
+        "finished_emi": finished_emi
+    })
+
+@app.get("/api/analytics/category_trends")
+def category_trends():
+    """Per-category expense totals for the last N months (stacked bar)."""
+    months = request.args.get("months", type=int, default=6)
+    months = max(1, min(months, 24))
+    today = date.today()
+    month_keys = [
+        (today - relativedelta(months=i)).strftime("%Y-%m")
+        for i in range(months - 1, -1, -1)
+    ]
+    start = (today - relativedelta(months=months - 1)).replace(day=1)
+
+    rows = db.session.query(
+        func.strftime("%Y-%m", Expense.date),
+        Expense.category,
+        func.sum(Expense.amount)
+    ).filter(Expense.date >= start).group_by(
+        func.strftime("%Y-%m", Expense.date), Expense.category
+    ).all()
+
+    cat_totals = {}
+    data_map = {}
+    for m, cat, total in rows:
+        cat_totals[cat] = cat_totals.get(cat, 0.0) + float(total)
+        data_map[(m, cat)] = float(total)
+
+    # Only chart the top categories to keep the stack readable.
+    top_cats = sorted(cat_totals, key=cat_totals.get, reverse=True)[:6]
+    datasets = [
+        {"category": cat, "data": [data_map.get((m, cat), 0.0) for m in month_keys]}
+        for cat in top_cats
+    ]
+    return jsonify({"months": month_keys, "datasets": datasets})
+
+@app.get("/api/analytics/weekday_spending")
+def weekday_spending():
+    """Total and average spend grouped by day of the week."""
+    rows = db.session.query(
+        func.strftime("%w", Expense.date),
+        func.sum(Expense.amount),
+        func.count(Expense.id)
+    ).group_by(func.strftime("%w", Expense.date)).all()
+    totals = {int(w): float(t) for w, t, c in rows}
+    counts = {int(w): int(c) for w, t, c in rows}
+    # SQLite %w: 0=Sunday..6=Saturday; reorder to Mon..Sun for display.
+    order = [1, 2, 3, 4, 5, 6, 0]
+    names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    return jsonify({
+        "labels": names,
+        "totals": [totals.get(w, 0.0) for w in order],
+        "averages": [(totals.get(w, 0.0) / counts[w]) if counts.get(w) else 0.0 for w in order]
     })
 
 # # Utility route to initialize DB

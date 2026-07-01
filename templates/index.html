@@ -15,22 +15,85 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <style>
+    /* App background: soft gradient wash for light + dark */
+    body {
+      min-height: 100vh;
+      background-attachment: fixed;
+      background-image:
+        radial-gradient(1100px 600px at 100% -10%, rgba(99,102,241,0.12), transparent 60%),
+        radial-gradient(900px 500px at -10% 10%, rgba(16,185,129,0.10), transparent 55%),
+        linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    }
+    html.dark body {
+      background-image:
+        radial-gradient(1100px 600px at 100% -10%, rgba(99,102,241,0.22), transparent 60%),
+        radial-gradient(900px 500px at -10% 10%, rgba(16,185,129,0.12), transparent 55%),
+        linear-gradient(180deg, #0b1120 0%, #0f172a 100%);
+    }
+    /* Glassy card treatment */
+    .card {
+      backdrop-filter: blur(6px);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .card:hover { transform: translateY(-2px); }
+    /* Slimmer, themed scrollbars for the inner tables */
+    .thin-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+    .thin-scroll::-webkit-scrollbar-thumb { background: rgba(100,116,139,.4); border-radius: 8px; }
+    .thin-scroll::-webkit-scrollbar-track { background: transparent; }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-50">
+<body class="text-slate-900 dark:text-slate-100">
   <div id="app" class="max-w-6xl mx-auto p-4 space-y-6">
   {% raw %}
-    <header class="flex items-center justify-between">
-      <h1 class="text-3xl font-bold"> Expense & Diary Tracker</h1>
-      <div class="flex items-center gap-2">
-        <div class="text-sm opacity-70">Flask + Vue (CDN) • Encrypted diary</div>
-        <button @click="toggleDarkMode" class="p-2 rounded-full bg-slate-200 dark:bg-slate-700">
-          <svg v-if="isDarkMode" class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 9a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z"></path></svg>
-          <svg v-else class="w-5 h-5 text-slate-700" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-        </button>
+    <header class="card flex items-center justify-between bg-white/70 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/60 rounded-2xl shadow-lg px-5 py-4">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight bg-gradient-to-r from-indigo-600 to-emerald-500 bg-clip-text text-transparent">Expense & Diary Tracker</h1>
+        <div class="text-sm opacity-60 mt-0.5">Flask + Vue (CDN) • Encrypted diary</div>
       </div>
+      <button @click="toggleDarkMode" class="p-2 rounded-full bg-slate-200 dark:bg-slate-700 hover:ring-2 hover:ring-indigo-400 transition">
+        <svg v-if="isDarkMode" class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 9a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z"></path></svg>
+        <svg v-else class="w-5 h-5 text-slate-700" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+      </button>
     </header>
+
+    <!-- ─── KPI SUMMARY STRIP (current month, vs previous month) ─── -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="card bg-white/70 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/60 rounded-2xl shadow-lg p-4">
+        <div class="text-xs uppercase tracking-wide opacity-60">Net This Month</div>
+        <div class="text-2xl font-black mt-1" :class="kpi.net >= 0 ? 'text-emerald-500' : 'text-rose-500'">{{ fmtMoney(kpi.net) }}</div>
+        <div class="text-xs mt-1 flex items-center gap-1" :class="deltaClass(kpi.netDelta)">
+          <span>{{ deltaArrow(kpi.netDelta) }} {{ fmtMoney(Math.abs(kpi.netDelta)) }}</span>
+          <span class="opacity-50">vs last mo</span>
+        </div>
+      </div>
+      <div class="card bg-white/70 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/60 rounded-2xl shadow-lg p-4">
+        <div class="text-xs uppercase tracking-wide opacity-60">Spending</div>
+        <div class="text-2xl font-black mt-1 text-rose-500">{{ fmtMoney(kpi.spend) }}</div>
+        <div class="text-xs mt-1 flex items-center gap-1" :class="deltaClass(-kpi.spendDelta)">
+          <span>{{ deltaArrow(kpi.spendDelta) }} {{ fmtMoney(Math.abs(kpi.spendDelta)) }}</span>
+          <span class="opacity-50">vs last mo</span>
+        </div>
+      </div>
+      <div class="card bg-white/70 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/60 rounded-2xl shadow-lg p-4">
+        <div class="text-xs uppercase tracking-wide opacity-60">Earnings</div>
+        <div class="text-2xl font-black mt-1 text-emerald-500">{{ fmtMoney(kpi.earn) }}</div>
+        <div class="text-xs mt-1 flex items-center gap-1" :class="deltaClass(kpi.earnDelta)">
+          <span>{{ deltaArrow(kpi.earnDelta) }} {{ fmtMoney(Math.abs(kpi.earnDelta)) }}</span>
+          <span class="opacity-50">vs last mo</span>
+        </div>
+      </div>
+      <div class="card bg-white/70 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/60 rounded-2xl shadow-lg p-4">
+        <div class="text-xs uppercase tracking-wide opacity-60">Savings Rate</div>
+        <div class="text-2xl font-black mt-1" :class="kpi.savings >= 0 ? 'text-indigo-500' : 'text-rose-500'">{{ kpi.savings.toFixed(0) }}%</div>
+        <div class="text-xs mt-1 flex items-center gap-1" :class="deltaClass(kpi.savingsDelta)">
+          <span>{{ deltaArrow(kpi.savingsDelta) }} {{ Math.abs(kpi.savingsDelta).toFixed(0) }}pp</span>
+          <span class="opacity-50">vs last mo</span>
+        </div>
+      </div>
+    </section>
     <section class="grid md:grid-cols-3 gap-6">
-      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
+      <div class="card bg-white/70 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/60 rounded-2xl shadow-lg p-4">
         <h2 class="text-xl font-semibold mb-2">Add Expense</h2>
         <form @submit.prevent="submitExpense" class="grid grid-cols-2 gap-3">
           <div class="col-span-1">
@@ -54,7 +117,7 @@
           </div>
         </form>
       </div>
-      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
+      <div class="card bg-white/70 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/60 rounded-2xl shadow-lg p-4">
         <h2 class="text-xl font-semibold mb-2">Add Diary Entry (encrypted at rest)</h2>
         <form @submit.prevent="submitDiary" class="space-y-2">
           <div>
@@ -70,7 +133,7 @@
           </div>
         </form>
       </div>
-      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
+      <div class="card bg-white/70 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/60 rounded-2xl shadow-lg p-4">
         <h2 class="text-xl font-semibold mb-2">Add Earning (Biweekly)</h2>
         <form @submit.prevent="submitEarning" class="grid grid-cols-2 gap-3">
           <div class="col-span-1">
@@ -94,19 +157,35 @@
     <hr class="border-slate-200 dark:border-slate-700" />
 
     <section class="grid md:grid-cols-3 gap-6">
-      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4 md:col-span-1">
+      <div class="card bg-white/70 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/60 rounded-2xl shadow-lg p-4 md:col-span-1">
         <div class="flex items-center justify-between mb-2">
-          <h2 class="text-xl font-semibold">Monthly Categories (Pie)</h2>
+          <h2 class="text-xl font-semibold">Monthly Categories</h2>
           <div class="flex gap-2 items-center">
-            <input v-model.number="filters.month" type="number" min="1" max="12" class="w-20 border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
-            <input v-model.number="filters.year" type="number" min="2000" max="2100" class="w-24 border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
+            <input v-model.number="filters.month" type="number" min="1" max="12" class="w-16 border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
+            <input v-model.number="filters.year" type="number" min="2000" max="2100" class="w-20 border rounded p-1 bg-white dark:bg-slate-700 dark:border-slate-600">
             <button @click="loadCharts" class="px-3 py-1 rounded bg-slate-900 text-white dark:bg-slate-50 dark:text-slate-900">Go</button>
           </div>
         </div>
         <canvas id="pieChart"></canvas>
+        <!-- Ranked top-categories breakdown -->
+        <div class="mt-4 space-y-2">
+          <div v-if="topCategories.length === 0" class="text-sm text-center italic opacity-50 py-2">No expenses this month.</div>
+          <div v-for="c in topCategories" :key="c.category">
+            <div class="flex justify-between text-sm">
+              <span class="flex items-center gap-2">
+                <span class="inline-block w-2.5 h-2.5 rounded-full" :style="{ background: c.color }"></span>
+                {{ c.category }}
+              </span>
+              <span class="font-medium">{{ fmtMoney(c.total) }} <span class="opacity-50 text-xs">{{ c.pct.toFixed(0) }}%</span></span>
+            </div>
+            <div class="h-1.5 mt-1 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div class="h-full rounded-full" :style="{ width: c.pct + '%', background: c.color }"></div>
+            </div>
+          </div>
+        </div>
       </div>
       
-      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4 md:col-span-2">
+      <div class="card bg-white/70 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/60 rounded-2xl shadow-lg p-4 md:col-span-2">
         <div class="flex items-center justify-between mb-2">
           <h2 class="text-xl font-semibold">Yearly Financial Summary</h2>
           <div class="flex gap-4 items-center">
@@ -123,8 +202,48 @@
       </div>
     </section>
     <hr class="border-slate-200 dark:border-slate-700" />
-    
-    <section class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
+
+    <!-- ─── ADVANCED ANALYTICS DASHBOARD ─── -->
+    <section class="card bg-white/70 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/60 rounded-2xl shadow-lg p-4">
+      <h2 class="text-xl font-semibold mb-4">Advanced Analytics</h2>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="rounded-2xl p-4 bg-gradient-to-br from-rose-500/10 to-rose-500/5 border border-rose-500/20">
+          <div class="text-xs uppercase tracking-wide opacity-60">Avg Monthly Spend</div>
+          <div class="text-2xl font-black mt-1 text-rose-500">{{ fmtMoney(analytics.avg_monthly_expense) }}</div>
+          <div class="text-xs mt-1 opacity-60">over {{ analytics.months_tracked }} mo • {{ analytics.expense_count }} entries</div>
+        </div>
+        <div class="rounded-2xl p-4 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20">
+          <div class="text-xs uppercase tracking-wide opacity-60">Avg Monthly Earn</div>
+          <div class="text-2xl font-black mt-1 text-emerald-500">{{ fmtMoney(analytics.avg_monthly_earning) }}</div>
+          <div class="text-xs mt-1 opacity-60">Avg expense {{ fmtMoney(analytics.avg_expense) }}</div>
+        </div>
+        <div class="rounded-2xl p-4 bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/20">
+          <div class="text-xs uppercase tracking-wide opacity-60">Biggest Expense</div>
+          <div class="text-2xl font-black mt-1 text-amber-500">{{ fmtMoney(analytics.biggest_expense ? analytics.biggest_expense.amount : 0) }}</div>
+          <div class="text-xs mt-1 opacity-60 truncate" v-if="analytics.biggest_expense">{{ analytics.biggest_expense.category }} • {{ analytics.biggest_expense.date }}</div>
+          <div class="text-xs mt-1 opacity-60" v-else>—</div>
+        </div>
+        <div class="rounded-2xl p-4 bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 border border-indigo-500/20">
+          <div class="text-xs uppercase tracking-wide opacity-60">EMI Outstanding</div>
+          <div class="text-2xl font-black mt-1 text-indigo-500">{{ fmtMoney(analytics.emi_outstanding) }}</div>
+          <div class="text-xs mt-1 opacity-60">{{ analytics.active_emi }} active • {{ analytics.finished_emi }} finished</div>
+        </div>
+      </div>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <h3 class="text-lg font-semibold mb-2">Category Spending — Last 6 Months</h3>
+          <canvas id="categoryTrendChart"></canvas>
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold mb-2">Spending by Day of Week</h3>
+          <canvas id="weekdayChart"></canvas>
+          <p class="text-xs opacity-50 mt-2" v-if="analytics.top_category">Top category all-time: <span class="font-semibold">{{ analytics.top_category.category }}</span> ({{ fmtMoney(analytics.top_category.total) }})</p>
+        </div>
+      </div>
+    </section>
+    <hr class="border-slate-200 dark:border-slate-700" />
+
+    <section class="card bg-white/70 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/60 rounded-2xl shadow-lg p-4">
       <h2 class="text-xl font-semibold mb-2">EMI Planner</h2>
       
       <h3 class="text-lg font-semibold mb-2 text-purple-600 dark:text-purple-400">Add New Plan</h3>
@@ -154,7 +273,7 @@
           
           <div class="flex flex-col h-full">
               <h3 class="text-lg font-semibold mt-2 mb-2">Upcoming Payments (To Be Paid)</h3>
-              <div class="flex-grow max-h-80 overflow-y-auto border rounded-xl dark:border-slate-700 relative">
+              <div class="flex-grow max-h-80 overflow-y-auto thin-scroll border rounded-xl dark:border-slate-700 relative">
                   <table class="w-full text-left table-auto">
                     <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-700 shadow-sm">
                       <tr>
@@ -183,7 +302,7 @@
           
           <div class="flex flex-col h-full">
               <h3 class="text-lg font-semibold mt-2 mb-2">EMI Plan Summary</h3>
-              <div class="flex-grow max-h-96 overflow-y-auto border rounded-xl dark:border-slate-700 relative">
+              <div class="flex-grow max-h-96 overflow-y-auto thin-scroll border rounded-xl dark:border-slate-700 relative">
                   <table class="w-full text-left table-auto">
                     <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-700 shadow-sm">
                       <tr>
@@ -250,10 +369,26 @@
               </div>
           </div>
       </div>
+
+      <!-- ─── FINISHED EMIs ARCHIVE ─── -->
+      <div class="mt-8" v-if="finishedEMIs.length">
+        <h3 class="text-lg font-semibold mt-2 mb-3 text-emerald-600 dark:text-emerald-400">✓ Finished EMIs</h3>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div v-for="f in finishedEMIs" :key="f.id" class="border border-emerald-500/30 rounded-xl p-3 bg-emerald-500/5">
+            <div class="flex justify-between items-start">
+              <div class="font-semibold">{{ f.note || 'Unnamed EMI' }}</div>
+              <span class="text-[10px] uppercase tracking-wide font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Paid Off</span>
+            </div>
+            <div class="text-xl font-black mt-1 text-emerald-500">${{ f.total_amount.toFixed(2) }}</div>
+            <div class="text-xs opacity-70 mt-1">{{ f.months }} payments of ${{ f.monthly_payment.toFixed(2) }}</div>
+            <div class="text-xs opacity-60 mt-0.5">{{ f.start_date }} → {{ f.end_date }}</div>
+          </div>
+        </div>
+      </div>
     </section>
     <hr class="border-slate-200 dark:border-slate-700" />
-    
-    <section class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
+
+    <section class="card bg-white/70 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/60 rounded-2xl shadow-lg p-4">
       <h2 class="text-xl font-semibold mb-2">Calendar • expenses total + diary</h2>
       <div class="flex items-center justify-between mb-3">
         <div class="flex gap-2 items-center">
@@ -267,7 +402,7 @@
     
     <hr class="border-slate-200 dark:border-slate-700" />
 
-    <section class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
+    <section class="card bg-white/70 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/60 rounded-2xl shadow-lg p-4">
       <h2 class="text-xl font-semibold mb-2">Recent Diary Entries</h2>
       <div class="grid md:grid-cols-2 gap-3">
         <div v-for="d in diary" :key="d.id" class="border rounded-xl p-3 dark:border-slate-700">
@@ -279,7 +414,7 @@
 
     <hr class="border-slate-200 dark:border-slate-700" />
 
-    <section class="bg-white dark:bg-slate-800 rounded-2xl shadow p-4">
+    <section class="card bg-white/70 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/60 rounded-2xl shadow-lg p-4">
       <h2 class="text-xl font-semibold mb-2">Expense List</h2>
       <div class="flex gap-2 items-center mb-4">
           <label class="text-sm">Filter by Month:</label>
@@ -356,7 +491,7 @@
       </div>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-      <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+      <div class="card bg-white/70 dark:bg-slate-800/60 p-6 rounded-2xl shadow-lg border border-white/60 dark:border-slate-700/60">
         <h3 class="text-xl font-semibold mb-4">Lifetime Performance</h3>
         <div class="space-y-4" v-if="lifetimeData">
           <div class="flex justify-between">
@@ -376,7 +511,7 @@
           <p class="text-xs text-slate-500 mt-2">Tracking since: {{ lifetimeData.earliest_date }}</p>
         </div>
       </div>
-      <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+      <div class="card bg-white/70 dark:bg-slate-800/60 p-6 rounded-2xl shadow-lg border border-white/60 dark:border-slate-700/60">
         <h3 class="text-xl font-semibold mb-2">Last 12 Months Trend</h3>
         <canvas id="rollingTrendChart"></canvas>
       </div>
@@ -396,9 +531,29 @@ const { createApp, onMounted, ref } = Vue
       const emiForm = ref({ start_date: new Date().toISOString().slice(0,10), amount: '', duration_months: 12, note: '' })
       
       const profitSummary = ref({ profit: 0.0, total_earnings: 0.0, total_expenses: 0.0 })
+
+      // Shared category color palette (pie + ranked breakdown)
+      const CAT_COLORS = ['#4F46E5', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#6366F1', '#EC4899', '#84CC16', '#F97316', '#14B8A6']
+
+      // KPI strip (current month vs previous month) + ranked categories
+      const kpi = ref({ spend: 0, earn: 0, net: 0, savings: 0, spendDelta: 0, earnDelta: 0, netDelta: 0, savingsDelta: 0 })
+      const topCategories = ref([])
+
+      const fmtMoney = (n) => '$' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      const deltaArrow = (n) => n > 0.005 ? '▲' : (n < -0.005 ? '▼' : '—')
+      // For spending, a decrease is "good"; caller flips the sign before passing in.
+      const deltaClass = (n) => n > 0.005 ? 'text-emerald-500' : (n < -0.005 ? 'text-rose-500' : 'opacity-50')
       
-      const emiPlans = ref([]) 
-      const upcomingEMIPayments = ref([]) 
+      const emiPlans = ref([])
+      const upcomingEMIPayments = ref([])
+      const finishedEMIs = ref([])
+
+      // Advanced analytics dashboard state
+      const analytics = ref({
+        avg_monthly_expense: 0, avg_monthly_earning: 0, avg_expense: 0,
+        months_tracked: 0, expense_count: 0, emi_outstanding: 0,
+        active_emi: 0, finished_emi: 0, biggest_expense: null, top_category: null
+      })
 
       // EMI inline-edit state
       const emiEditingId = ref(null)
@@ -425,6 +580,8 @@ const { createApp, onMounted, ref } = Vue
       let pieChart = null
       let financialLineChart = null
       let calendar = null
+      let categoryTrendChart = null
+      let weekdayChart = null
   
       const submitExpense = async () => {
         await axios.post('/api/expenses', expenseForm.value)
@@ -434,6 +591,8 @@ const { createApp, onMounted, ref } = Vue
         await loadCharts()
         await loadCalendar()
         await fetchExpenses()
+        await loadRollingTrend()
+        await loadAnalytics()
       }
   
       const submitDiary = async () => {
@@ -448,6 +607,8 @@ const { createApp, onMounted, ref } = Vue
         earningForm.value.amount = ''
         earningForm.value.source = ''
         await loadCharts()
+        await loadRollingTrend()
+        await loadAnalytics()
       }
 
       const submitEMIPlan = async () => {
@@ -470,6 +631,8 @@ const { createApp, onMounted, ref } = Vue
               await loadCharts()
               await loadCalendar()
               await fetchExpenses()
+              await loadRollingTrend()
+              await loadAnalytics()
           }
       }
 
@@ -517,6 +680,7 @@ const { createApp, onMounted, ref } = Vue
         await fetchExpenses()
         await loadCharts()
         await loadCalendar()
+        await loadAnalytics()
       }
 
       const deleteExpense = async (id) => {
@@ -525,6 +689,8 @@ const { createApp, onMounted, ref } = Vue
           await fetchExpenses()
           await loadCharts()
           await loadCalendar()
+          await loadRollingTrend()
+          await loadAnalytics()
         }
       }
   
@@ -537,6 +703,60 @@ const { createApp, onMounted, ref } = Vue
         const res = await axios.get('/api/emi')
         emiPlans.value = res.data.plans
         upcomingEMIPayments.value = res.data.upcoming_payments
+        finishedEMIs.value = res.data.finished_plans || []
+      }
+
+      const loadAnalytics = async () => {
+        const tickColor = isDarkMode.value ? '#E2E8F0' : '#1E293B'
+        const gridColor = isDarkMode.value ? 'rgba(241,245,249,0.1)' : 'rgba(30,41,59,0.1)'
+
+        const sumRes = await axios.get('/api/analytics/summary')
+        analytics.value = sumRes.data
+
+        // Stacked bar: per-category spend over the last 6 months
+        const trendRes = await axios.get('/api/analytics/category_trends', { params: { months: 6 } })
+        const ctCtx = document.getElementById('categoryTrendChart')
+        if (categoryTrendChart) categoryTrendChart.destroy()
+        categoryTrendChart = new Chart(ctCtx, {
+          type: 'bar',
+          data: {
+            labels: trendRes.data.months,
+            datasets: trendRes.data.datasets.map((ds, i) => ({
+              label: ds.category,
+              data: ds.data,
+              backgroundColor: CAT_COLORS[i % CAT_COLORS.length],
+              borderRadius: 3
+            }))
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom', labels: { color: tickColor } } },
+            scales: {
+              x: { stacked: true, ticks: { color: tickColor }, grid: { color: gridColor } },
+              y: { stacked: true, beginAtZero: true, ticks: { color: tickColor }, grid: { color: gridColor } }
+            }
+          }
+        })
+
+        // Bar: total spend by day of week
+        const wRes = await axios.get('/api/analytics/weekday_spending')
+        const wCtx = document.getElementById('weekdayChart')
+        if (weekdayChart) weekdayChart.destroy()
+        weekdayChart = new Chart(wCtx, {
+          type: 'bar',
+          data: {
+            labels: wRes.data.labels,
+            datasets: [{ label: 'Total Spent', data: wRes.data.totals, backgroundColor: '#6366f1', borderRadius: 4 }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: true, ticks: { color: tickColor }, grid: { color: gridColor } },
+              x: { ticks: { color: tickColor }, grid: { color: gridColor } }
+            }
+          }
+        })
       }
   
       const loadCharts = async () => {
@@ -547,10 +767,17 @@ const { createApp, onMounted, ref } = Vue
         const pieCtx = document.getElementById('pieChart')
         if (pieChart) pieChart.destroy()
         pieChart = new Chart(pieCtx, {
-          type: 'pie',
-          data: { labels, datasets: [{ data: values, backgroundColor: ['#4F46E5', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#6366F1', '#EC4899', '#84CC16', '#F97316', '#14B8A6'] }] },
-          options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: isDarkMode.value ? '#E2E8F0' : '#1E293B' } } } }
+          type: 'doughnut',
+          data: { labels, datasets: [{ data: values, backgroundColor: CAT_COLORS, borderWidth: 0 }] },
+          options: { responsive: true, cutout: '60%', plugins: { legend: { display: false } } }
         })
+
+        // Ranked category breakdown with share-of-spend
+        const catTotal = values.reduce((a, b) => a + b, 0)
+        topCategories.value = pieRes.data.data
+          .map((d, i) => ({ ...d, pct: catTotal > 0 ? (d.total / catTotal * 100) : 0 }))
+          .sort((a, b) => b.total - a.total)
+          .map((d, i) => ({ ...d, color: CAT_COLORS[labels.indexOf(d.category) % CAT_COLORS.length] }))
         
         // 2. Financial Line Chart
         const financialRes = await axios.get('/api/summary/yearly_financials', { params: { year: filters.value.year } })
@@ -606,6 +833,8 @@ const { createApp, onMounted, ref } = Vue
         document.documentElement.classList.toggle('dark', isDarkMode.value)
         localStorage.setItem('darkMode', isDarkMode.value)
         loadCharts()
+        loadRollingTrend()
+        loadAnalytics()
       }
 
       const lifetimeData = ref(null);
@@ -615,39 +844,65 @@ const { createApp, onMounted, ref } = Vue
         lifetimeData.value = lifeRes.data;
         const monthlyRes = await axios.get('/api/summary/rolling_12_months');
         const data = monthlyRes.data.data;
+
+        // Derive the KPI strip from the latest two months of the rolling series
+        const cur = data[data.length - 1] || { expenses: 0, earnings: 0, profit: 0 }
+        const prev = data[data.length - 2] || { expenses: 0, earnings: 0, profit: 0 }
+        const savings = cur.earnings > 0 ? (cur.profit / cur.earnings) * 100 : 0
+        const prevSavings = prev.earnings > 0 ? (prev.profit / prev.earnings) * 100 : 0
+        kpi.value = {
+          spend: cur.expenses, earn: cur.earnings, net: cur.profit, savings,
+          spendDelta: cur.expenses - prev.expenses,
+          earnDelta: cur.earnings - prev.earnings,
+          netDelta: cur.profit - prev.profit,
+          savingsDelta: savings - prevSavings
+        }
+
+        const gridColor = isDarkMode.value ? 'rgba(241,245,249,0.1)' : 'rgba(30,41,59,0.1)'
+        const tickColor = isDarkMode.value ? '#E2E8F0' : '#1E293B'
         const ctx = document.getElementById('rollingTrendChart').getContext('2d');
         if (rollingChart) rollingChart.destroy();
 
         rollingChart = new Chart(ctx, {
-          type: 'line',
           data: {
             labels: data.map(m => m.month),
             datasets: [
               {
+                type: 'bar',
+                label: 'Net',
+                data: data.map(m => m.profit),
+                backgroundColor: data.map(m => m.profit >= 0 ? '#6366f199' : '#f43f5e99'),
+                borderRadius: 4,
+                order: 3
+              },
+              {
+                type: 'line',
                 label: 'Earnings',
                 data: data.map(m => m.earnings),
                 borderColor: '#10b981',
-                backgroundColor: '#10b98133',
+                backgroundColor: '#10b98122',
                 fill: true,
-                tension: 0.4
+                tension: 0.4,
+                order: 1
               },
               {
+                type: 'line',
                 label: 'Expenses',
                 data: data.map(m => m.expenses),
                 borderColor: '#f43f5e',
-                backgroundColor: '#f43f5e33',
+                backgroundColor: '#f43f5e22',
                 fill: true,
-                tension: 0.4
+                tension: 0.4,
+                order: 2
               }
             ]
           },
           options: {
             responsive: true,
-            plugins: {
-              legend: { position: 'bottom' }
-            },
+            plugins: { legend: { position: 'bottom', labels: { color: tickColor } } },
             scales: {
-              y: { beginAtZero: true }
+              y: { beginAtZero: true, ticks: { color: tickColor }, grid: { color: gridColor } },
+              x: { ticks: { color: tickColor }, grid: { color: gridColor } }
             }
           }
         });
@@ -665,6 +920,7 @@ const { createApp, onMounted, ref } = Vue
         await fetchExpenses()
         await fetchEMIPayments()
         await loadRollingTrend()
+        await loadAnalytics()
       })
   
       return { 
@@ -677,8 +933,9 @@ const { createApp, onMounted, ref } = Vue
         editingId, editData, startEdit, saveEdit, deleteExpense, 
         showModal, modalDate, modalExpenses, modalDiary, 
         isDarkMode, toggleDarkMode, profitSummary, 
-        emiPlans, upcomingEMIPayments, fetchEMIPayments, lifetimeData,
-        loadRollingTrend
+        emiPlans, upcomingEMIPayments, finishedEMIs, fetchEMIPayments, lifetimeData,
+        loadRollingTrend, loadAnalytics, analytics,
+        kpi, topCategories, fmtMoney, deltaArrow, deltaClass
       }
     }
   }).mount('#app')
